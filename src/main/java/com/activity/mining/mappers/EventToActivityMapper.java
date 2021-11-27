@@ -1,8 +1,10 @@
 package com.activity.mining.mappers;
 
-import cc.kave.commons.model.events.CommandEvent;
-import cc.kave.commons.model.events.IDEEvent;
+import cc.kave.commons.model.events.*;
 import cc.kave.commons.model.events.completionevents.CompletionEvent;
+import cc.kave.commons.model.events.testrunevents.TestRunEvent;
+import cc.kave.commons.model.events.userprofiles.UserProfileEvent;
+import cc.kave.commons.model.events.versioncontrolevents.VersionControlEvent;
 import cc.kave.commons.model.events.visualstudio.*;
 import com.activity.mining.Activity;
 import org.slf4j.Logger;
@@ -29,6 +31,9 @@ public interface EventToActivityMapper<T extends IDEEvent> {
     SolutionEventMapper solutionEventMapper = new SolutionEventMapper();
     UpdateEventMapper updateEventMapper = new UpdateEventMapper();
     WindowEventMapper windowEventMapper = new WindowEventMapper();
+    VersionControlEventMapper versionControlEventMapper = new VersionControlEventMapper();
+    NavigationEventMapper navigationEventMapper = new NavigationEventMapper();
+    SystemEventMapper systemEventMapper = new SystemEventMapper();
 
     static Optional<Activity> mapEvent (IDEEvent event){
 
@@ -44,9 +49,16 @@ public interface EventToActivityMapper<T extends IDEEvent> {
         if (event instanceof SolutionEvent) return solutionEventMapper.map((SolutionEvent) event);
         if (event instanceof UpdateEvent) return updateEventMapper.map((UpdateEvent) event);
         if (event instanceof WindowEvent) return windowEventMapper.map((WindowEvent) event);
+        if (event instanceof VersionControlEvent) return versionControlEventMapper.map((VersionControlEvent) event);
+        if (event instanceof NavigationEvent) return navigationEventMapper.map((NavigationEvent) event);
+        if (event instanceof ActivityEvent) return Optional.of(Activity.Any);
+        if (event instanceof SystemEvent) return systemEventMapper.map((SystemEvent) event);
+        if (event instanceof TestRunEvent) return Optional.of(Activity.Development);
+        if (event instanceof UserProfileEvent) return Optional.of(Activity.LocalConfiguration);
 
-        log.error("No event mapper for event! {}", event.getClass().getName());
-        return Optional.empty();
+        log.error("No event mapper for event! {} {}", event.getClass().getName(),
+               event.toString());
+        return Optional.of(Activity.Mystery);
     }
 
     static Map<IDEEvent, Activity> mapEvents (List<IDEEvent> events){

@@ -9,23 +9,29 @@ import cc.kave.commons.model.events.visualstudio.BuildEvent;
 
 public enum Activity {
 
-    Any,
-    Development,
-    ProjectManagement,
-    LocalConfiguration,
-    Navigation,
+    Any ('A'),
+    Development('D'),
+    ProjectManagement('P'),
+    LocalConfiguration('C'),
+    Navigation('N'),
     //Testing, //There is no testing activity in the paper... this would be a deviation.
-    Other,
-
+    Other('O'),
+    Mystery('y'),
     //Inactivities
-    Away,
-    Inactive,
-    InactiveLong,
-    Waiting,
+    Away('w'),
+    Inactive('I'),
+    InactiveLong('l'),
+    Waiting('W'),
 
     //Legacy
-    EnterIDE,
-    LeaveIDE;
+    EnterIDE('T'),
+    LeaveIDE('L');
+
+    public char symbol;
+
+    Activity(char symbol){
+        this.symbol = symbol;
+    }
 
     public static Activity fromShorthand(String shortcode) throws Exception {
         return switch (shortcode){

@@ -3,3 +3,9 @@
 build
 out
 Events-170301-2/
+activity-mining.db
+mgfsm.jar
+*.log
+*.sequences
+seqInput
+seqOutput
