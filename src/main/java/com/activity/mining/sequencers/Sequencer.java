@@ -1,10 +1,9 @@
 package com.activity.mining.sequencers;
 
 import com.activity.mining.Interval;
-import com.activity.mining.Sequence;
-import com.activity.mining.SequenceData;
+import com.activity.mining.records.Sequence;
+import com.activity.mining.records.SequenceData;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

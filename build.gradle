@@ -35,6 +35,13 @@ dependencies {
     compileOnly group: 'io.agroal', name: 'agroal-api', version: '1.13'
     runtimeOnly group: 'io.agroal', name: 'agroal-pool', version:'1.13'
 
+    implementation files('libs/ajt-2.9.jar')
+    implementation files('libs/commons-math-1.2.jar')
+    implementation files('libs/Jama-1.0.2.jar')
+    implementation files('libs/javaml-0.1.7.jar')
+    implementation files('libs/libsvm.jar')
+    implementation files('libs/weka.jar')
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 }

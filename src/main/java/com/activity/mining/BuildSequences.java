@@ -1,6 +1,7 @@
 package com.activity.mining;
 
 import com.activity.mining.persistence.DataStore;
+import com.activity.mining.records.Sequence;
 import com.activity.mining.sequencers.OneToOne;
 import com.activity.mining.sequencers.Sequencer;
 import org.slf4j.Logger;

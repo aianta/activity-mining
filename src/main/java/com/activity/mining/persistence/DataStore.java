@@ -4,20 +4,18 @@ import cc.kave.commons.model.events.IDEEvent;
 
 
 import cc.kave.commons.utils.io.json.JsonUtils;
-import com.activity.mining.Sequence;
-import com.activity.mining.SequenceMiner;
+import com.activity.mining.records.FrequentSubSequence;
+import com.activity.mining.records.MiningRecord;
+import com.activity.mining.records.Sequence;
 import com.activity.mining.mappers.EventToActivityMapper;
-import io.vertx.core.Vertx;
-import io.vertx.jdbcclient.JDBCConnectOptions;
-import io.vertx.jdbcclient.JDBCPool;
-import io.vertx.sqlclient.PoolOptions;
-import io.vertx.sqlclient.Tuple;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -43,6 +41,23 @@ public class DataStore {
             "Sequencer TEXT NOT NULL," +
             "PRIMARY KEY (SessionId, Sequencer));";
 
+    private static final String FREQUENT_SUBSEQUENCE_TABLE = "CREATE TABLE IF NOT EXISTS FREQUENT_SUBSEQUENCES (" +
+            "ExecutionId TEXT NOT NULL," +
+            "Sequence TEXT NOT NULL," +
+            "Frequency INTEGER NOT NULL," +
+            "PRIMARY KEY (ExecutionId,Sequence));";
+
+    private static final String MINING_RECORDS_TABLE = "CREATE TABLE IF NOT EXISTS MINING_RECORDS(" +
+            "ExecutionId TEXT PRIMARY KEY," +
+            "Timestamp TEXT NOT NULL," +
+            "StartTimestamp NUMERIC NOT NULL," +
+            "EndTimestamp NUMERIC NOT NULL," +
+            "Support INTEGER NOT NULL," +
+            "Gamma INTEGER NOT NULL," +
+            "Lambda INTEGER NOT NULL," +
+            "Sequencer TEXT," +
+            "Duration INTEGER GENERATED ALWAYS AS (endTimestamp - startTimestamp) STORED);" ;
+
     private static final String INSERT_EVENT = "INSERT INTO EVENTS (" +
             "EventId, " +
             "IDESessionUUID, " +
@@ -56,6 +71,20 @@ public class DataStore {
             "Sequencer," +
             "Sequence) " +
             "VALUES (?,?,?);";
+
+    private static final String INSERT_FREQUENT_SUBSEQUENCE = "INSERT INTO FREQUENT_SUBSEQUENCES (" +
+            "ExecutionId, Sequence, Frequency) " +
+            "VALUES (?,?,?);";
+
+    private static final String INSERT_MINING_RECORD = "INSERT INTO MINING_RECORDS(" +
+            "ExecutionId,Timestamp,StartTimestamp,EndTimestamp,Support,Gamma,Lambda,Sequencer) " +
+            "VALUES (?,?,?,?,?,?,?,?);";
+
+
+    /**
+     * SELECT QUERIES
+     */
+    private static final String SELECT_FREQUENT_SUBSEQUENCES = "SELECT Sequence FROM FREQUENT_SUBSEQUENCES WHERE ExecutionId = ?;";
 
     private static final String SELECT_DISTINCT_SESSIONS = "SELECT DISTINCT IDESessionUUID FROM " +
             "EVENTS;";
@@ -80,6 +109,8 @@ public class DataStore {
         ){
             stmt.execute(EVENTS_TABLE);
             stmt.execute(SEQUENCE_TABLE);
+            stmt.execute(MINING_RECORDS_TABLE);
+            stmt.execute(FREQUENT_SUBSEQUENCE_TABLE);
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -137,6 +168,56 @@ public class DataStore {
     public void insert(IDEEvent event){
         withConnection(conn->{
             insert(conn, event);
+        });
+    }
+
+    public void insert(MiningRecord record){
+        withPreparedStatement(INSERT_MINING_RECORD, stmt->{
+
+            try{
+                stmt.setString(1, record.executionId());
+                stmt.setString(2, record.timestamp());
+                stmt.setLong(3, record.startTimestamp());
+                stmt.setLong(4, record.endTimestamp());
+                stmt.setInt(5,record.support());
+                stmt.setInt(6, record.gamma());
+                stmt.setInt(7, record.lambda());
+                stmt.setString(8,record.sequencer());
+
+                stmt.executeUpdate();
+            }catch (SQLException e){
+                log.error(e.getMessage(),e);
+            }
+
+        });
+    }
+
+    public void insert(List<FrequentSubSequence> fssList){
+        log.info("Saving {} frequent subsequences, please wait...", fssList.size());
+        withConnection(connection -> {
+            ListIterator<FrequentSubSequence> it = fssList.listIterator();
+            while (it.hasNext()){
+                log.info("Inserting {}/{} frequent subsequence", it.nextIndex(), fssList.size());
+                insert(connection,it.next());
+            }
+        });
+    }
+
+    public void insert(FrequentSubSequence fss){
+        withConnection(connection -> insert(connection, fss));
+    }
+
+    public void insert(Connection connection,FrequentSubSequence fss){
+        withPreparedStatement(connection,INSERT_FREQUENT_SUBSEQUENCE, stmt->{
+            try{
+                stmt.setString(1, fss.executionId());
+                stmt.setString(2, fss.sequence());
+                stmt.setInt(3, fss.frequency());
+
+                stmt.executeUpdate();
+            }catch (SQLException e){
+                log.error(e.getMessage(), e);
+            }
         });
     }
 

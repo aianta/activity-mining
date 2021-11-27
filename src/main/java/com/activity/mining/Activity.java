@@ -28,6 +28,7 @@ public enum Activity {
     LeaveIDE('L');
 
     public char symbol;
+    
 
     Activity(char symbol){
         this.symbol = symbol;
