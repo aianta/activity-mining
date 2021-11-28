@@ -9,3 +9,4 @@ mgfsm.jar
 *.sequences
 seqInput
 seqOutput
+*.csv

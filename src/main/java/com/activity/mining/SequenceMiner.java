@@ -33,10 +33,34 @@ public class SequenceMiner {
     private static final int GAMMA = 1;
     private static final int LAMBDA = 35030; //Longest sequence length
 
+    private static DataStore db;
+
     public static void main (String [] args){
 
         //Establish database connection and get sequences
-        DataStore db = DataStore.getInstance(DEFAULT_DATABASE_PATH);
+        db = DataStore.getInstance(DEFAULT_DATABASE_PATH);
+
+        //Export mined sequences to CSV or mine sequences depending on arguments
+        if (args.length > 0){
+            switch (args[0]){
+                case "mine": mine(); break;
+                case "export": export(args[1], args[2]);
+            }
+        }else{
+            mine(); //No args means we're mining.
+        }
+
+
+
+    }
+
+    public static void export(String executionId, String outFile){
+        List<FrequentSubSequence> subSequences = db.getFrequentSubSequences(executionId);
+        toCSV(subSequences, outFile);
+    }
+
+    public static void mine(){
+
         List<Sequence> sequences = db.getSequences(OneToOne.class);
 
         //Prepare mining environment
@@ -162,6 +186,28 @@ public class SequenceMiner {
         }
 
         return result;
+    }
+
+    public static File toCSV(List<FrequentSubSequence> fssList, String fileName){
+        File f = new File(fileName);
+        try(FileWriter fw = new FileWriter(f);
+            BufferedWriter bw = new BufferedWriter(fw);
+        ){
+            bw.write("Sequences,\n");
+            fssList.forEach(fss-> {
+                try {
+                    bw.write(fss.sequence() + ",\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            bw.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return f;
     }
 
 

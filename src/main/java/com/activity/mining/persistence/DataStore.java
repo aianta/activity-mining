@@ -84,7 +84,7 @@ public class DataStore {
     /**
      * SELECT QUERIES
      */
-    private static final String SELECT_FREQUENT_SUBSEQUENCES = "SELECT Sequence FROM FREQUENT_SUBSEQUENCES WHERE ExecutionId = ?;";
+    private static final String SELECT_FREQUENT_SUBSEQUENCES = "SELECT Sequence, Frequency FROM FREQUENT_SUBSEQUENCES WHERE ExecutionId = ?;";
 
     private static final String SELECT_DISTINCT_SESSIONS = "SELECT DISTINCT IDESessionUUID FROM " +
             "EVENTS;";
@@ -219,6 +219,23 @@ public class DataStore {
                 log.error(e.getMessage(), e);
             }
         });
+    }
+
+    public List<FrequentSubSequence> getFrequentSubSequences(String executionId){
+        List<FrequentSubSequence> result = new ArrayList<>();
+        withPreparedStatement(SELECT_FREQUENT_SUBSEQUENCES, stmt->{
+            try{
+                stmt.setString(1, executionId);
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()){
+                    result.add(new FrequentSubSequence(executionId, rs.getString("Sequence"),  rs.getInt("Frequency")));
+                }
+            }catch (SQLException e){
+                log.error(e.getMessage(),e);
+            }
+        });
+        return result;
     }
 
     /**
