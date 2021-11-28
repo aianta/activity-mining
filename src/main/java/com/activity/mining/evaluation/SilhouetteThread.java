@@ -46,7 +46,15 @@ public class SilhouetteThread extends Thread{
                 );
                 double silhouette = silhouette(a_i,b_i,clusters[this.index]);
                 silhouetteValues.add(silhouette);
-                log.info("[{}] Computed silhouette {}/{} for cluster {}/{}", this.getName(), i+1,clusters[this.index].size(), this.index+1, clusters.length);
+                log.info("[{}] Computed silhouette ({}, a_i: {}, b_i:{}) {}/{} for cluster {}/{}",
+                        this.getName(),
+                        silhouette,
+                        a_i,
+                        b_i,
+                        i+1,clusters[this.index].size(),
+                        this.index+1,
+                        clusters.length
+                );
 
             }
         }catch (Exception e){
@@ -76,23 +84,35 @@ public class SilhouetteThread extends Thread{
 
     private double b(Instance i, Dataset [] clusters){
 
-        double [] results = new double[clusters.length];
+        List<Double> results = new ArrayList<>();
 
         for (int c = 0; c < clusters.length; c++){
             Dataset cluster = clusters[c];
-            double constant = 1/cluster.size();
+
+            if (cluster.size() == 0){
+                continue; //If cluster is empty, no b_i's to compute here.
+            }
+
+            double constant = (double) 1/(double) cluster.size();
             double sumOfDistances = 0.0;
             for(int j = 0; j < cluster.size(); j++){
                 sumOfDistances += dm.measure(i, cluster.instance(j));
             }
-            results[c] = constant*sumOfDistances;
+            log.info("[{}]sumOfDistances:{} constant: {}, cluster_size: {}",this.getName(), sumOfDistances, constant, cluster.size());
+            results.add(constant*sumOfDistances);
         }
 
-        return Arrays.stream(results).min().getAsDouble();
+        log.info("[{}] b list: {}", this.getName(), results);
+
+        return results.stream().mapToDouble(Double::doubleValue).min().getAsDouble();
 
     }
 
     private double silhouette(double a , double b, Dataset cluster) throws Exception {
+        if (a == b){
+            return 0;
+        }
+
         if (cluster.size() > 1){
             return (b-a)/Math.max(a,b);
         }

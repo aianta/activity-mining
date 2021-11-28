@@ -10,3 +10,4 @@ mgfsm.jar
 seqInput
 seqOutput
 *.csv
+*.db-journal

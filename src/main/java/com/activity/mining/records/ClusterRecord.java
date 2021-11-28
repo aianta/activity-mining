@@ -1,4 +1,14 @@
 package com.activity.mining.records;
 
-public record ClusterRecord(String executionId, int numClusters, int maxIterations, String distanceMetric) {
+import java.util.UUID;
+
+public record ClusterRecord(
+        String sourceExecutionId,
+        UUID clusteringId,
+        String embedding,
+        String sequence,
+        String cluster,
+        int iteration,
+        double iterationSilhouette
+) {
 }

@@ -4,9 +4,7 @@ import cc.kave.commons.model.events.IDEEvent;
 
 
 import cc.kave.commons.utils.io.json.JsonUtils;
-import com.activity.mining.records.FrequentSubSequence;
-import com.activity.mining.records.MiningRecord;
-import com.activity.mining.records.Sequence;
+import com.activity.mining.records.*;
 import com.activity.mining.mappers.EventToActivityMapper;
 
 import org.slf4j.Logger;
@@ -26,6 +24,9 @@ public class DataStore {
 
     private static DataStore instance;
 
+    /**
+     * CREATE TABLE QUERIES
+     */
     private static final String EVENTS_TABLE = "CREATE TABLE IF NOT EXISTS EVENTS ( " +
             "EventId TEXT PRIMARY KEY,"+
             "IDESessionUUID TEXT NOT NULL," +
@@ -58,6 +59,27 @@ public class DataStore {
             "Sequencer TEXT," +
             "Duration INTEGER GENERATED ALWAYS AS (endTimestamp - startTimestamp) STORED);" ;
 
+    private static final String CLUSTER_DATA_TABLE = "CREATE TABLE IF NOT EXISTS CLUSTER_DATA(" +
+            "SourceExecutionId TEXT NOT NULL," +
+            "ClusteringId TEXT NOT NULL," +
+            "Embedding TEXT NOT NULL," +
+            "Sequence TEXT NOT NULL," +
+            "Cluster TEXT NOT NULL," +
+            "Iteration NUMERIC NOT NULL," +
+            "IterationSilhouetteIndex NUMERIC NOT NULL);";
+
+    private static final String CLUSTERING_RECORDS_TABLE = "CREATE TABLE IF NOT EXISTS CLUSTERING_RECORDS(" +
+            "Timestamp TEXT NOT NULL," +
+            "SourceExecutionId TEXT NOT NULL," +
+            "ClusteringId TEXT PRIMARY KEY," +
+            "K NUMERIC NOT NULL," +
+            "Kappa NUMERIC NOT NULL," +
+            "DistanceMetric TEXT NOT NULL," +
+            "SilhouetteIndex NUMERIC NOT NULL);";
+
+    /**
+     * INSERT QUERIES
+     */
     private static final String INSERT_EVENT = "INSERT INTO EVENTS (" +
             "EventId, " +
             "IDESessionUUID, " +
@@ -80,10 +102,19 @@ public class DataStore {
             "ExecutionId,Timestamp,StartTimestamp,EndTimestamp,Support,Gamma,Lambda,Sequencer) " +
             "VALUES (?,?,?,?,?,?,?,?);";
 
+    private static final String INSERT_CLUSTER_DATA = "INSERT INTO CLUSTER_DATA (" +
+            "SourceExecutionId,ClusteringId,Embedding,Sequence,Cluster,Iteration,IterationSilhouetteIndex) " +
+            "VALUES (?,?,?,?,?,?,?);";
+
+    private static final String INSERT_CLUSTERING_RECORD = "INSERT INTO CLUSTERING_RECORDS (" +
+            "Timestamp,SourceExecutionId,ClusteringId,K,DistanceMetric,SilhouetteIndex,Kappa) " +
+            "VALUES (?,?,?,?,?,?,?);";
+
 
     /**
      * SELECT QUERIES
      */
+
     private static final String SELECT_FREQUENT_SUBSEQUENCES = "SELECT Sequence, Frequency FROM FREQUENT_SUBSEQUENCES WHERE ExecutionId = ?;";
 
     private static final String SELECT_DISTINCT_SESSIONS = "SELECT DISTINCT IDESessionUUID FROM " +
@@ -111,6 +142,8 @@ public class DataStore {
             stmt.execute(SEQUENCE_TABLE);
             stmt.execute(MINING_RECORDS_TABLE);
             stmt.execute(FREQUENT_SUBSEQUENCE_TABLE);
+            stmt.execute(CLUSTER_DATA_TABLE);
+            stmt.execute(CLUSTERING_RECORDS_TABLE);
 
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -168,6 +201,42 @@ public class DataStore {
     public void insert(IDEEvent event){
         withConnection(conn->{
             insert(conn, event);
+        });
+    }
+
+    public void insert(ClusterRecord record){
+        withPreparedStatement(INSERT_CLUSTER_DATA, stmt->{
+            try{
+                stmt.setString(1,record.sourceExecutionId());
+                stmt.setString(2, record.clusteringId().toString());
+                stmt.setString(3, record.embedding());
+                stmt.setString(4, record.sequence());
+                stmt.setString(5, record.cluster());
+                stmt.setInt(6, record.iteration());
+                stmt.setDouble(7,record.iterationSilhouette());
+
+                stmt.executeUpdate();
+            }catch (SQLException e){
+                log.error(e.getMessage(),e);
+            }
+        });
+    }
+
+    public void insert(ClusteringRecord record){
+        withPreparedStatement(INSERT_CLUSTERING_RECORD, stmt->{
+            try{
+                stmt.setString(1, record.timestamp().toString());
+                stmt.setString(2,record.sourceExecutionId());
+                stmt.setString(3, record.clusteringId().toString());
+                stmt.setInt(4, record.k());
+                stmt.setString(5, record.distanceMetric());
+                stmt.setDouble(6,record.silhouetteIndex());
+                stmt.setInt(7,record.kappa());
+
+                stmt.executeUpdate();
+            }catch (SQLException e){
+                log.error(e.getMessage(),e);
+            }
         });
     }
 

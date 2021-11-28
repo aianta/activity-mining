@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** From a database containing a table of sequences, produces a @see <a href="http://uma-pi1.github.io/mgfsm/">MG-FSM</a>
@@ -30,7 +31,7 @@ public class SequenceMiner {
 
     //MGFSM Parameters
     private static final int SUPPORT = 378; // ~10% of sequences
-    private static final int GAMMA = 1;
+    private static final int GAMMA = 1; //gap size
     private static final int LAMBDA = 35030; //Longest sequence length
 
     private static DataStore db;
@@ -44,7 +45,7 @@ public class SequenceMiner {
         if (args.length > 0){
             switch (args[0]){
                 case "mine": mine(); break;
-                case "export": export(args[1], args[2]);
+                case "export": export(args[1], args[1] + ".csv");
             }
         }else{
             mine(); //No args means we're mining.
@@ -55,7 +56,10 @@ public class SequenceMiner {
     }
 
     public static void export(String executionId, String outFile){
-        List<FrequentSubSequence> subSequences = db.getFrequentSubSequences(executionId);
+        List<FrequentSubSequence> subSequences = db.getFrequentSubSequences(executionId)
+                .stream()
+                .filter(fss->fss.sequence().contains(""+Activity.Inactive.symbol))
+                .collect(Collectors.toList());
         toCSV(subSequences, outFile);
     }
 
