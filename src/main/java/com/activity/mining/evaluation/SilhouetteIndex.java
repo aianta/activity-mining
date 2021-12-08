@@ -3,19 +3,19 @@ package com.activity.mining.evaluation;
 
 import net.sf.javaml.clustering.evaluation.ClusterEvaluation;
 import net.sf.javaml.core.Dataset;
-import net.sf.javaml.core.Instance;
+
 import net.sf.javaml.distance.DistanceMeasure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
+
 
 /**
  * Inspired from description found here:
@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 public class SilhouetteIndex implements ClusterEvaluation {
 
     private static final Logger log = LoggerFactory.getLogger(SilhouetteIndex.class);
-    private static final int MAX_THREADS = 10;
+    private static final int MAX_THREADS = 6;
 
     DistanceMeasure dm;
 

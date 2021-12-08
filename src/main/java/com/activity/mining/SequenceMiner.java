@@ -5,6 +5,9 @@ import com.activity.mining.records.FrequentSubSequence;
 import com.activity.mining.records.MiningRecord;
 import com.activity.mining.records.Sequence;
 import com.activity.mining.sequencers.OneToOne;
+import com.activity.mining.sequencers.RelativeTimeSensitive;
+import com.activity.mining.sequencers.Sequencer;
+import com.activity.mining.sequencers.TimeSensitive5;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,11 +31,12 @@ public class SequenceMiner {
     private static final String MGFSM_OUTPUT_DIR = "seqOutput";
     private static final String JAVA_HOME_ENV = "C:\\Program Files\\AdoptOpenJDK\\jdk-8.0.212.03-hotspot";
     private static final String OUTPUT_FILE_NAME = "translatedFS";
+    private static final Sequencer sequencer = new TimeSensitive5();
 
     //MGFSM Parameters
-    private static final int SUPPORT = 378; // ~10% of sequences
+    private static final int SUPPORT = 757; // ~20% of sequences
     private static final int GAMMA = 1; //gap size
-    private static final int LAMBDA = 35030; //Longest sequence length
+    private static final int LAMBDA = 360; //Longest sequence length
 
     private static DataStore db;
 
@@ -45,7 +49,8 @@ public class SequenceMiner {
         if (args.length > 0){
             switch (args[0]){
                 case "mine": mine(); break;
-                case "export": export(args[1], args[1] + ".csv");
+                case "export": export(args[1], args[1] + ".csv"); break;
+                default: log.warn("Unrecognized input argument");
             }
         }else{
             mine(); //No args means we're mining.
@@ -65,7 +70,7 @@ public class SequenceMiner {
 
     public static void mine(){
 
-        List<Sequence> sequences = db.getSequences(OneToOne.class);
+        List<Sequence> sequences = db.getSequences(sequencer.getClass());
 
         //Prepare mining environment
         try{
@@ -127,7 +132,7 @@ public class SequenceMiner {
 
             Date executionStart = Date.from(Instant.now());
 
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", "mgfsm.jar",
+            ProcessBuilder pb = new ProcessBuilder("java","-Xmx50G", "-jar", "mgfsm.jar",
                     "-i", input.toString() ,
                     "-o", output.toString(),
                     "-s", Integer.toString(support),

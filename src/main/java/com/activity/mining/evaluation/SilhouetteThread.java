@@ -98,11 +98,11 @@ public class SilhouetteThread extends Thread{
             for(int j = 0; j < cluster.size(); j++){
                 sumOfDistances += dm.measure(i, cluster.instance(j));
             }
-            log.info("[{}]sumOfDistances:{} constant: {}, cluster_size: {}",this.getName(), sumOfDistances, constant, cluster.size());
+            //log.info("[{}]sumOfDistances:{} constant: {}, cluster_size: {}",this.getName(), sumOfDistances, constant, cluster.size());
             results.add(constant*sumOfDistances);
         }
 
-        log.info("[{}] b list: {}", this.getName(), results);
+        //log.info("[{}] b list: {}", this.getName(), results);
 
         return results.stream().mapToDouble(Double::doubleValue).min().getAsDouble();
 

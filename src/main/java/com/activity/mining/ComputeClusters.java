@@ -24,10 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.sql.Date;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class ComputeClusters {
 
@@ -35,9 +32,10 @@ public class ComputeClusters {
     private static final String DEFAULT_DATABASE_PATH = "activity-mining.db";
     //private static final String DEFAULT_EMBEDDINGS_FILE = "sequence_vectors_no_index.csv";
     //private static final String DEFAULT_SEQUENCES_FILE = "fss.csv";
-    private static final String DEFAULT_EMBEDDINGS_FILE = "cfab4fce-9648-4747-92a3-c61e77eaad35_embeddings.csv";
-    private static final String DEFAULT_SEQUENCES_FILE = "cfab4fce-9648-4747-92a3-c61e77eaad35.csv";
-    private static final int INPUT_KAPPA = 1;
+    private static final String DEFAULT_EMBEDDINGS_FILE = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31_embeddings_k_5.csv";
+    private static final String DEFAULT_SEQUENCES_FILE = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31.csv";
+    private static final String MINING_ID = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31";
+    private static final int INPUT_KAPPA = 5;
     private static final int MIN_K = 2;
     private static final int MAX_K = 20;
     private static final int MAX_ITERATIONS = 100;
@@ -50,6 +48,15 @@ public class ComputeClusters {
         log.info("Initializing datastore connection");
         db = DataStore.getInstance(DEFAULT_DATABASE_PATH);
 
+        if(args.length > 0 && args[0].equals("export")){
+            exportClustering(args[1], Integer.parseInt(args[2]));
+            System.exit(0);
+        }
+
+
+
+
+
         Dataset ds = readEmbeddingsFromFiles(DEFAULT_EMBEDDINGS_FILE, DEFAULT_SEQUENCES_FILE);
         log.info("Dataset size: {}", ds.size());
 
@@ -57,9 +64,70 @@ public class ComputeClusters {
 
         log.info("{}",ds.instance(0).classValue());
 
+        if(args.length > 0){
+            UUID clusteringId = UUID.randomUUID();
+            runCluster(Integer.parseInt(args[0]), ds, MINING_ID, clusteringId);
+            log.info("Done clustering: {} ", clusteringId.toString());
+        }else{
+            cluster(ds, MINING_ID);
+        }
 
-        cluster(ds, "cfab4fce-9648-4747-92a3-c61e77eaad35");
+    }
 
+    public static void exportClustering(String clusteringId, int iteration){
+        toCSV(db.getClusterData(clusteringId, iteration), "clustering-data-" + clusteringId + ".csv");
+    }
+
+    public static void toCSV(List<ClusterRecord> records, String fileName){
+        File f = new File(fileName);
+        try(FileWriter fw = new FileWriter(f);
+            BufferedWriter bw = new BufferedWriter(fw);
+        ){
+
+            bw.write("cluster,sequence, embedding\n");
+            Iterator<ClusterRecord> it = records.iterator();
+            while(it.hasNext()){
+                ClusterRecord record = it.next();
+                bw.write(record.cluster() + "," + record.sequence() + "," + record.embedding() + "\n");
+            }
+
+            bw.flush();
+
+        }catch (IOException e){
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    public static List<Double> runCluster(int k, Dataset ds, String sourceExecutionId, UUID clusteringId){
+        //Generate a unique clustering id
+
+        List<Double> iterationResults = new ArrayList<>();
+        for (int iter = 0; iter < EVALUATION_ITERATIONS; iter++) {
+            Clusterer kMedoids = new KMedoids(k, MAX_ITERATIONS, DISTANCE_MEASURE);
+
+            Dataset[] clusters = kMedoids.cluster(ds);
+            ClusterEvaluation evaluation = new SilhouetteIndex(DISTANCE_MEASURE);
+            double score = evaluation.score(clusters);
+            iterationResults.add(score);
+
+
+            //Save the clustering data
+                for(int i = 0; i < clusters.length; i++){
+                    for(Instance instance:clusters[i]){
+                        db.insert(new ClusterRecord(
+                                sourceExecutionId,
+                                clusteringId,
+                                extractEmbedding(instance),
+                                ((String)instance.classValue()),
+                                Integer.toString(i),
+                                iter,
+                                score
+                        ));
+                    }
+                }
+        }
+
+        return iterationResults;
     }
 
     /**
@@ -75,33 +143,9 @@ public class ComputeClusters {
          * is multithreaded to the number of clusters.
          */
         for (int k = MAX_K; k >= MIN_K; k--){
-            //Generate a unique clustering id
             UUID clusteringId = UUID.randomUUID();
-            List<Double> iterationResults = new ArrayList<>();
-            for (int iter = 0; iter < EVALUATION_ITERATIONS; iter++){
-                Clusterer kMedoids = new KMedoids(k, MAX_ITERATIONS, DISTANCE_MEASURE);
+            List<Double> iterationResults = runCluster(k, ds, sourceExecutionId, clusteringId);
 
-                Dataset [] clusters = kMedoids.cluster(ds);
-                ClusterEvaluation evaluation = new SilhouetteIndex(DISTANCE_MEASURE);
-                double score = evaluation.score(clusters);
-                iterationResults.add(score);
-
-
-                //Save the clustering data
-                for(int i = 0; i < clusters.length; i++){
-                    for(Instance instance:clusters[i]){
-                        db.insert(new ClusterRecord(
-                                sourceExecutionId,
-                                clusteringId,
-                                extractEmbedding(instance),
-                                ((String)instance.classValue()),
-                                Integer.toString(i),
-                                iter,
-                                score
-                        ));
-                    }
-                }
-            }
 
             //Save a record of the clustering results
             db.insert(new ClusteringRecord(

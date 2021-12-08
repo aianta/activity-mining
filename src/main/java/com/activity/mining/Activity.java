@@ -14,7 +14,6 @@ public enum Activity {
     ProjectManagement('P'),
     LocalConfiguration('C'),
     Navigation('N'),
-    //Testing, //There is no testing activity in the paper... this would be a deviation.
     Other('O'),
     Mystery('y'),
     //Inactivities

@@ -124,6 +124,8 @@ public class DataStore {
 
     private static final String SELECT_SEQUENCES = "SELECT Sequence, SessionId FROM SEQUENCES WHERE Sequencer = ?;";
 
+    private static final String SELECT_CLUSTER_DATA = "SELECT SourceExecutionId, ClusteringId, Embedding, Sequence, Cluster, Iteration, IterationSilhouetteIndex FROM CLUSTER_DATA WHERE ClusteringId = ? AND Iteration = ?;";
+
     private String dbPath;
     private String url;
 
@@ -288,6 +290,31 @@ public class DataStore {
                 log.error(e.getMessage(), e);
             }
         });
+    }
+
+    public List<ClusterRecord> getClusterData(String clusteringId, int iteration){
+        List<ClusterRecord> result = new ArrayList<>();
+        withPreparedStatement(SELECT_CLUSTER_DATA, pstmt->{
+            try{
+                pstmt.setString(1, clusteringId);
+                pstmt.setInt(2, iteration);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()){
+                    result.add(new ClusterRecord(
+                            rs.getString("SourceExecutionId"),
+                            UUID.fromString(rs.getString("clusteringId")),
+                            rs.getString("embedding"),
+                            rs.getString("sequence"),
+                            rs.getString("cluster"),
+                            rs.getInt("iteration"),
+                            rs.getDouble("IterationSilhouetteIndex")));
+
+                }
+            }catch (SQLException e){
+                log.error(e.getMessage(), e);
+            }
+        });
+        return result;
     }
 
     public List<FrequentSubSequence> getFrequentSubSequences(String executionId){
