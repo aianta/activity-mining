@@ -1,4 +1,5 @@
 plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
     id 'java'
 }
 
@@ -8,6 +9,40 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
+
+//Setup possible main classes for shadow jars.
+task intervalGeneratorJar(type: Jar){
+    manifest{
+        attributes 'Main-Class': 'com.activity.mining.IntervalGenerator'
+    }
+}
+
+task computeClustersJar(type:Jar){
+    manifest{
+        attributes 'Main-Class': 'com.activity.mining.ComputeClusters'
+    }
+}
+
+task buildSequencesJar(type:Jar){
+    manifest{
+        attributes 'Main-Class': 'com.activity.mining.BuildSequences'
+    }
+}
+
+task sequenceMinerJar(type:Jar){
+    manifest{
+        attributes 'Main-Class': 'com.activity.mining.SequenceMiner'
+    }
+}
+
+
+shadowJar{
+    archiveFileName="activity-mining-compute-clusters.${extension}"
+    manifest{
+        inheritFrom project.tasks.computeClustersJar.manifest
+    }
+}
+
 
 ext{
     vertxVersion = "4.2.1"

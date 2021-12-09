@@ -29,28 +29,50 @@ import java.util.*;
 public class ComputeClusters {
 
     private static final Logger log = LoggerFactory.getLogger(ComputeClusters.class);
-    private static final String DEFAULT_DATABASE_PATH = "activity-mining.db";
+    private static String DEFAULT_DATABASE_PATH = "activity-mining.db";
     //private static final String DEFAULT_EMBEDDINGS_FILE = "sequence_vectors_no_index.csv";
     //private static final String DEFAULT_SEQUENCES_FILE = "fss.csv";
-    private static final String DEFAULT_EMBEDDINGS_FILE = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31_embeddings_k_5.csv";
-    private static final String DEFAULT_SEQUENCES_FILE = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31.csv";
-    private static final String MINING_ID = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31";
-    private static final int INPUT_KAPPA = 5;
-    private static final int MIN_K = 2;
-    private static final int MAX_K = 20;
+    private static String DEFAULT_EMBEDDINGS_FILE = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31_embeddings_k_5.csv";
+    private static String DEFAULT_SEQUENCES_FILE = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31.csv";
+    private static String MINING_ID = "1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31";
+    private static int INPUT_KAPPA = 5;
+    private static int MIN_K = 2;
+    private static int MAX_K = 20;
     private static final int MAX_ITERATIONS = 100;
     private static final DistanceMeasure DISTANCE_MEASURE = new CosineDistance();
-    private static final int EVALUATION_ITERATIONS = 5; //Try every k-clustering this many times
+    private static int EVALUATION_ITERATIONS = 5; //Try every k-clustering this many times
 
     private static DataStore db;
 
     public static void main (String [] args){
+
         log.info("Initializing datastore connection");
         db = DataStore.getInstance(DEFAULT_DATABASE_PATH);
 
         if(args.length > 0 && args[0].equals("export")){
             exportClustering(args[1], Integer.parseInt(args[2]));
             System.exit(0);
+        }else{
+
+            DEFAULT_DATABASE_PATH = args[1];
+            DEFAULT_EMBEDDINGS_FILE = args[2];
+            DEFAULT_SEQUENCES_FILE = args[3];
+            MINING_ID = args[4];
+            INPUT_KAPPA = Integer.parseInt(args[5]);
+            MIN_K = Integer.parseInt(args[6]);
+            MAX_K = Integer.parseInt(args[7]);
+            EVALUATION_ITERATIONS = Integer.parseInt(args[8]);
+
+            log.info("DATABASE_PAHT: {} EMBEDDING_FILE: {} SEQUENCES_FILE: {} MINING_ID: {} INPUT_KAPPA: {} MIN_K: {} MAX_K: {} EVALUATION_ITERATIONS: {}",
+                    DEFAULT_DATABASE_PATH,
+                    DEFAULT_EMBEDDINGS_FILE,
+                    DEFAULT_SEQUENCES_FILE,
+                    MINING_ID,
+                    INPUT_KAPPA,
+                    MIN_K,
+                    MAX_K,
+                    EVALUATION_ITERATIONS);
+
         }
 
 

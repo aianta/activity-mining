@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.spec.MGF1ParameterSpec;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,35 +27,65 @@ import java.util.stream.IntStream;
 public class SequenceMiner {
 
     private static final Logger log = LoggerFactory.getLogger(SequenceMiner.class);
-    private static final String DEFAULT_DATABASE_PATH = "activity-mining.db";
-    private static final String MGFSM_INPUT_DIR = "seqInput";
-    private static final String MGFSM_OUTPUT_DIR = "seqOutput";
-    private static final String JAVA_HOME_ENV = "C:\\Program Files\\AdoptOpenJDK\\jdk-8.0.212.03-hotspot";
-    private static final String OUTPUT_FILE_NAME = "translatedFS";
-    private static final Sequencer sequencer = new TimeSensitive5();
+    private static String DEFAULT_DATABASE_PATH = "activity-mining.db";
+    private static String MGFSM_INPUT_DIR = "seqInput";
+    private static String MGFSM_OUTPUT_DIR = "seqOutput";
+    private static String JAVA_HOME_ENV = "C:\\Program Files\\AdoptOpenJDK\\jdk-8.0.212.03-hotspot";
+    private static String OUTPUT_FILE_NAME = "translatedFS";
+    private static Sequencer sequencer = new TimeSensitive5();
 
     //MGFSM Parameters
-    private static final int SUPPORT = 757; // ~20% of sequences
-    private static final int GAMMA = 1; //gap size
-    private static final int LAMBDA = 360; //Longest sequence length
+    private static int SUPPORT = 757; // ~20% of sequences
+    private static int GAMMA = 1; //gap size
+    private static int LAMBDA = 360; //Longest sequence length
 
     private static DataStore db;
 
-    public static void main (String [] args){
-
-        //Establish database connection and get sequences
-        db = DataStore.getInstance(DEFAULT_DATABASE_PATH);
+    public static void main (String [] args) throws Exception {
 
         //Export mined sequences to CSV or mine sequences depending on arguments
         if (args.length > 0){
             switch (args[0]){
-                case "mine": mine(); break;
                 case "export": export(args[1], args[1] + ".csv"); break;
+                case "mine":
+                    DEFAULT_DATABASE_PATH = args[1];
+                    MGFSM_INPUT_DIR = args[2];
+                    MGFSM_OUTPUT_DIR = args[3];
+                    JAVA_HOME_ENV = args[4];
+                    OUTPUT_FILE_NAME = args[5];
+                    sequencer = switch (args[6]){
+                        case "TimeSensitive5" -> new TimeSensitive5();
+                        case "RelativeTimeSensitive" -> new RelativeTimeSensitive();
+                        case "OneToOne" -> new OneToOne();
+                        default -> throw new Exception("Unrecognized sequencer");
+                    };
+                    SUPPORT = Integer.parseInt(args[7]);
+                    GAMMA = Integer.parseInt(args[8]);
+                    LAMBDA = Integer.parseInt(args[9]);
+
+                    log.info("DATABASE_PATH: {} MGFSM_INPUT_DIR: {} MGFSM_OUTPUT_DIR: {} JAVA_HOME_ENV: {} OUTPUT_FILE_NAME: {} SEQUENCER: {} SUPPORT: {} GAMMA: {} LAMBDA:{}",
+                            DEFAULT_DATABASE_PATH,
+                            MGFSM_INPUT_DIR,
+                            MGFSM_OUTPUT_DIR,
+                            JAVA_HOME_ENV,
+                            OUTPUT_FILE_NAME,
+                            sequencer.getClass().getName(),
+                            SUPPORT,
+                            GAMMA,
+                            LAMBDA);
+
+                    //Establish database connection and get sequences
+                    db = DataStore.getInstance(DEFAULT_DATABASE_PATH);
+                    mine(); break;
                 default: log.warn("Unrecognized input argument");
             }
         }else{
-            mine(); //No args means we're mining.
+
+
+            throw new Exception("Expected args!"); //No args means something is wrong
         }
+
+
 
 
 
@@ -202,7 +233,6 @@ public class SequenceMiner {
         try(FileWriter fw = new FileWriter(f);
             BufferedWriter bw = new BufferedWriter(fw);
         ){
-            bw.write("Sequences,\n");
             fssList.forEach(fss-> {
                 try {
                     bw.write(fss.sequence() + ",\n");

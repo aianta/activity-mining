@@ -26,10 +26,10 @@ import java.util.*;
 public class IntervalGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(IntervalGenerator.class);
-    private static final String DEFAULT_DATA_PATH = "./Events-170301-2/";
-    private static final String DEFAULT_DATABASE_PATH = "activity-mining.db";
-    private static final int STARTING_ARCHIVE = 0;
-    private static final int STARTING_RECORD = 0;
+    private static String DEFAULT_DATA_PATH = "./Events-170301-2/";
+    private static String DEFAULT_DATABASE_PATH = "activity-mining.db";
+    private static int STARTING_ARCHIVE = 0;
+    private static int STARTING_RECORD = 0;
 
     String rootDataDirectoryPath;
     Map<String, List<IDEEvent>> eventDataset;
@@ -42,6 +42,14 @@ public class IntervalGenerator {
     public static void main (String args []){
 
         log.info("Executing with {} arguments. Root data path: {} ", args.length, args.length > 0 ? args[0]: DEFAULT_DATA_PATH);
+
+        DEFAULT_DATA_PATH = args[0];
+        DEFAULT_DATABASE_PATH = args[1];
+        STARTING_ARCHIVE = Integer.parseInt(args[2]);
+        STARTING_RECORD = Integer.parseInt(args[3]);
+
+        log.info("DATA_PATH: {} DATABASE_PATH: {} STARTING_ARCHIVE: {} STARTING_RECORD: {}",
+                DEFAULT_DATA_PATH, DEFAULT_DATABASE_PATH, STARTING_ARCHIVE, STARTING_RECORD);
 
         log.info("Initializing DataStore");
         DataStore.getInstance(DEFAULT_DATABASE_PATH);
