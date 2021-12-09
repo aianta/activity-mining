@@ -37,9 +37,9 @@ task sequenceMinerJar(type:Jar){
 
 
 shadowJar{
-    archiveFileName="activity-mining-compute-clusters.${extension}"
+    archiveFileName="activity-mining-miner.${extension}"
     manifest{
-        inheritFrom project.tasks.computeClustersJar.manifest
+        inheritFrom project.tasks.sequenceMinerJar.manifest
     }
 }
 

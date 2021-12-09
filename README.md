@@ -5,7 +5,7 @@ https://1drv.ms/u/s!AlzPN94u8PvZgpsi9VYBQif5t7LMAA?e=UfTSD6
 The best way to explore and work with this data is using the freely available:
 https://sqlitebrowser.org/
 
-## Useful SQL queries
+## Useful SQL queries & processed data
 
 ### Get Frequent sub-sequence results for a particular sequencer
 Get frequent sub-sequences produced by the RelativeTimeSensitive sequncer, ordered starting with the most frequent.
@@ -43,6 +43,21 @@ Results corresponding with this query and used for table 1 in the final report a
 * `data/timesensitive5-silhouette-results.csv`
 
 *Note: Standard deviation and mean information found in the above files was computed in Excel with the query results.*
+
+### Return the parameter sweep results for `kappa` and `K`
+
+```sql
+Select * from CLUSTERING_RECORDS ORDER by SilhouetteIndex desc;
+```
+
+This query was used to create figures 1&2 in the report. The figures themselves are taken straight from the https://sqlitebrowser.org/ tool.
+
+The query result is available in:
+
+`data/clustering-records.csv`
+
+*Note: There are 196 rows in the csv file while only 162 are mentioned in the report. This is because results for kappa = 20 were not fully computed as a result of time constraints.*
+
 
 # Recreating the experiment 
 

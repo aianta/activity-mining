@@ -233,6 +233,7 @@ public class SequenceMiner {
         try(FileWriter fw = new FileWriter(f);
             BufferedWriter bw = new BufferedWriter(fw);
         ){
+            bw.write("Sequences,\n");
             fssList.forEach(fss-> {
                 try {
                     bw.write(fss.sequence() + ",\n");
