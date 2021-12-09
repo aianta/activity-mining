@@ -39,8 +39,8 @@ For results from the:
 Results corresponding with this query and used for table 1 in the final report are available in the following files:
 
 * `data/onetoone-silhouette-results.csv`
-* `relativetimesensitive-silhouette-results.csv`
-* `timesensitive5-silhouette-results.csv`
+* `data/relativetimesensitive-silhouette-results.csv`
+* `data/timesensitive5-silhouette-results.csv`
 
 *Note: Standard deviation and mean information found in the above files was computed in Excel with the query results.*
 
@@ -56,12 +56,37 @@ To recreate the experiment you'll have to:
 6. Combine the exported file from step 4 with the output of step 5 to create clusters using **Compute Clusters**
 
 
+### Using Docker
+
+Each component is provided as a docker container for your convenience.
+
+Execution of some components depends on passing in input files. Inside every docker container we've created a path `/usr/app/mounted`.
+
+Clone this repository and mount the working directory to the docker image uisng the volume commadn like so:
+
+`docker run --volume <your local working dir>:/usr/app/mounted aianta/<image> <args>`.
+
+Keep this volume mounting in mind when specifying file paths. For example you will need to download and extract the KaVE Events dataset (https://www.kave.cc/datasets) for step 1. Extract the dataset into same folder you cloned this repo in. You should then have an `Events-170301-2` folder. 
+
+To pass this folder to the loader you'll have to use the path `/usr/app/mounted/Events-170301-2/` as the `<extracted KaVE dataset path>`.
+
+Similarly, you're going to want to create the resulting sqlite database in your host machine's working directory so that it doesn't get erased once the docker container is done executing. To do this specify a path inside `/usr/app/mounted/` like `/usr/app/mounted/activity-mining-docker.db`. You will notice a new file `activity-mining-docker.db` will be created which you'll want to use for subsequent steps. 
+
+
+**For all commands documented below prefix `docker run --volume <your local working dir>:/usr/app/mounted aianta/<image>` to the command arguments described.**
+
+A full example command running the loader to injest KaVE event data into a sqlite database file is provided below: 
+
+`docker run --volume //c/Users/aiant/phdspace/classes/663_software_analytics/activity-mining:/usr/app/mounted aianta/activity-mining-loader 0 /usr/app/mounted/Events-170301-2/ /usr/app/mounted/docker-db 0 0`
+
 Valid `<sequncer>` values:
 * `TimeSensitive5`
 * `RelativeTimeSensitive`
 * `OneToOne`
 
 ## Loader
+**Docker Hub Image:** `aianta/activity-mining-loader`
+
 Iterates through the KaVE events dataset and inserts all events into a sqlite database. Database is created if it doesn't exist.
 
 Command:
@@ -70,13 +95,15 @@ Command:
 
 Example:
 
-`./Events-170301-2/ activity-mining.db 0 0`
+`/usr/app/mounted/Events-170301-2/ /usr/app/mounted//usr/app/mounted/activity-mining.db 0 0`
 
 `<starting archive>` Skips loading events from archives before `<starting archive>`. First archive is `1`. Used to restart an interrupted loading process.
 
 `<starting record>` Skips loading events before `<starting record>` in `<starting archive>`. First record is `1`. Used to restart an interrupted loading process.
 
 ## Sequence Builder
+**Docker Hub Image**:`aianta/activity-mining-build-sequences`
+
 Takes events from `EVENTS` table in database and builds activity interval sequences. Then produces their string representation using a specified sequncer. Results are inserted into `SEQUENCES` table in the database.
 
 Command:
@@ -85,11 +112,13 @@ Command:
 
 Example:
 
-`activity-mining.db TimeSensitive5 0`
+`/usr/app/mounted/activity-mining.db TimeSensitive5 0`
 
 `<skip>` Skips encoding first `<skip>` number of activity interval sequences into sequence strings. Used to restart interrupted sequencing process. 
 
 ## Sequence Miner
+**Docker Hub Image**:`aianta/activity-mining-miner`
+
 Has two modes `mine` and `export`. 
 
 ### In `mine` mode
@@ -101,7 +130,7 @@ Command:
 
 Example:
 
-`mine activity-mining.db seqInput seqOutput "C:\Program Files\AdoptOpenJDK\jdk-8.0.212.03-hotspot" translatedFS TimeSensitive5 757 1 360`
+`mine /usr/app/mounted/activity-mining.db seqInput seqOutput "C:\Program Files\AdoptOpenJDK\jdk-8.0.212.03-hotspot" translatedFS TimeSensitive5 757 1 360`
 
 `<mgfsm input/output dir>` organizes mgfsm inputs and outputs into these folders so you can keep track of which mining run was done with what parameters. Folders are created if they do not exist.
 
@@ -120,6 +149,7 @@ Example:
 `export d9729ac3-e36b-490a-81cc-55bc7d84f0b1`
 
 ## Compute Clusters
+**Docker Hub Image**:`aianta/activity-mining-compute-clusters`
 
 Has two modes `cluster` and `export`
 
@@ -132,7 +162,7 @@ Command:
 
 Example:
 
-`cluster activity-mining.db 1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31_embeddings_k_5.csv 1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31.csv 1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31 5 2 20 5`
+`cluster /usr/app/mounted/activity-mining.db 1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31_embeddings_k_5.csv 1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31.csv 1d2923ae-5ae2-40cc-88ef-a5d3d5c0ae31 5 2 20 5`
 
 ### In `export` mode
 Exports the cluster data points for a particular iteration (recall that clustering is done `<EVALUATION_ITERATIONS>` number of times) of a clustering id  (found in the clustering record in `CLUSTERING_RECORDS` table) to a `clustering-data-<clusteringId>.csv` file. 

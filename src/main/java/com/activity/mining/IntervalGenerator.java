@@ -55,7 +55,7 @@ public class IntervalGenerator {
         DataStore.getInstance(DEFAULT_DATABASE_PATH);
 
         //Override default data path with first string argument if provided.
-        IntervalGenerator ig = new IntervalGenerator(args.length > 0?args[0]:DEFAULT_DATA_PATH);
+        IntervalGenerator ig = new IntervalGenerator(DEFAULT_DATA_PATH);
         ig.loadData(STARTING_ARCHIVE, STARTING_RECORD);
 
 //
