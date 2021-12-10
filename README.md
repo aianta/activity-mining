@@ -56,8 +56,6 @@ The query result is available in:
 
 `data/clustering-records.csv`
 
-*Note: There are 196 rows in the csv file while only 162 are mentioned in the report. This is because results for kappa = 20 were not fully computed as a result of time constraints.*
-
 
 # Recreating the experiment 
 
