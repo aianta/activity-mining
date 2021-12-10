@@ -71,7 +71,7 @@ To recreate the experiment you'll have to:
 
 ### Using Docker
 
-Each component is provided as a docker container for your convenience, the should automatically be pulled from docker hub when invoked with the `docker run` command.
+Each **bold** component is provided as a docker container for your convenience, the should automatically be pulled from docker hub when invoked with the `docker run` command.
 
 Execution of some components depends on passing in input files. Inside every docker container we've created a path `/usr/app/mounted`.
 
